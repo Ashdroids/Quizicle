@@ -6,27 +6,62 @@ using TMPro;
 
 public class Quiz : MonoBehaviour
 {
+    [Header("Questions")]
     [SerializeField] QuestionSO question;
     [SerializeField] TextMeshProUGUI questionText;
-    [SerializeField] GameObject[] answerButtons;
 
+    [Header("Answers")]
+    [SerializeField] GameObject[] answerButtons;
+    int correctAnswerIndex;
+    bool hasAnsweredEarly;
+
+[Header("Button Colors")]
     [SerializeField] Sprite defaultAnswerSprite;
     [SerializeField] Sprite correctAnswerSprite;
-    int correctAnswerIndex;
+
+    [Header("Timer")]
+    [SerializeField] Image timerImage;
+    Timer timer;
+    
     void Start()
     {
+        timer = FindObjectOfType<Timer>();
         GetNextQuestion();
-        //DisplayQuestion();  
+        
     }
 
-    public void OnAnswerSelected(int index) 
+    void Update()
+    {
+        timerImage.fillAmount = timer.fillFraction;
+        if(timer.loadNextQuestion)
+        {
+            hasAnsweredEarly = false;
+            GetNextQuestion();
+            timer.loadNextQuestion = false;
+        }
+        else if(!hasAnsweredEarly && !timer.isAnsweringQuestion)
+        {
+            DisplayAnswer(-1);
+            SetButtonState(false);
+        }
+    }
+
+    public void OnAnswerSelected(int index)
+    {
+        hasAnsweredEarly = true;
+        DisplayAnswer(index);
+        SetButtonState(false);
+        timer.CancelTimer();
+    }
+
+    void DisplayAnswer(int index)
     {
         Image buttonImage;
 
-        if(index == question.GetCorrectAnswerIndex())
+        if (index == question.GetCorrectAnswerIndex())
         {
             questionText.text = "Correct!";
-            buttonImage = answerButtons[index].GetComponent<Image>();   
+            buttonImage = answerButtons[index].GetComponent<Image>();
             buttonImage.sprite = correctAnswerSprite;
         }
 
@@ -34,14 +69,12 @@ public class Quiz : MonoBehaviour
         {
             correctAnswerIndex = question.GetCorrectAnswerIndex();
             string correctAnswer = question.GetAnswer(correctAnswerIndex);
-            questionText.text = "Not quite! The correct answer is \n"  + correctAnswer;
-            buttonImage = answerButtons[correctAnswerIndex].GetComponent<Image>(); 
-            buttonImage.sprite = correctAnswerSprite; 
+            questionText.text = "Not quite! The correct answer is \n" + correctAnswer;
+            buttonImage = answerButtons[correctAnswerIndex].GetComponent<Image>();
+            buttonImage.sprite = correctAnswerSprite;
         }
-
-        SetButtonState(false);
     }
-    
+
     //Currently untested
     void GetNextQuestion()
     {
